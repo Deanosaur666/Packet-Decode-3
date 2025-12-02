@@ -4,8 +4,8 @@
 // Terminal input for linux:
 // gcc pd2.c ; ./a.out Frame2.bin
 
-void read16bits(int *, FILE *);
-void read32bits(long int *, FILE *);
+void read16bits(unsigned int *, FILE *);
+void read32bits(unsigned long int *, FILE *);
 
 // let's read a binary file
 int main(int argc, char *argv[]) {
@@ -228,22 +228,22 @@ int main(int argc, char *argv[]) {
 			// Destination Port
 			// 2 bytes, decimal
 			read16bits(&destPort, file);
-			printf("\nDestination Port:\t\t\t\t%u\n", destPort);
+			printf("Destination Port:\t\t\t%u\n", destPort);
 
 			// Raw Sequence Sumber
 			// 4 bytes, decimal
 			read32bits(&seqNumber, file);
-			printf("\nRaw Sequence Number:\t\t\t\t%lu\n", seqNumber);
+			printf("Raw Sequence Number:\t\t\t%lu\n", seqNumber);
 
 			// Raw Acknowledgement Number
 			// 4 bytes, decimal
 			read32bits(&ackNumber, file);
-			printf("\nRaw Acknowledgement Number:\t\t\t\t%lu\n", ackNumber);
+			printf("Raw Acknowledgement Number:\t\t%lu\n", ackNumber);
 
 			// Data Offset
 			// 4 bits, decimal
 			// skip 4 reserved buts
-			printf("Data Offset:\t\t\t");
+			printf("Data Offset:\t\t\t\t");
 			fread(&byte, sizeof(char), 1, file);
 			dataOffset = (byte >> 4) & 0x0F;
 			printf("%d", dataOffset);
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
 			// 8 bits, 1 byte
 			// left to right:
 			// CWR, ECE, URG, ACK, PSH, RST, SYN, FIN
-			printf("Flags:\t\t\t\t");
+			printf("\nFlags:\t\t\t\t\t");
 			fread(&byte, sizeof(char), 1, file);
 			if(byte & 0x80)
 				printf("CWR ");
@@ -275,17 +275,17 @@ int main(int argc, char *argv[]) {
 			// Window Size
 			// 2 bytes, decimal
 			read16bits(&advertisedWindow, file);
-			printf("\nWindow Size:\t\t\t\t%u\n", advertisedWindow);
+			printf("\nWindow Size:\t\t\t\t%u", advertisedWindow);
 
 			// TCP Checksum
 			// 2 bytes, hex
 			read16bits(&tcpChecksum, file);
-			printf("\nTCP Checksum:\t\t\t\t%x\n", tcpChecksum);
+			printf("\nTCP Checksum:\t\t\t\t0x%04x", tcpChecksum);
 
 			// Urgent Pointer
 			// 2 bytes, decimal (I GUESS)
 			read16bits(&urgentPointer, file);
-			printf("\nUrgent Pointer:\t\t\t\t%u\n", urgentPointer);
+			printf("\nUrgent Pointer:\t\t\t\t%u", urgentPointer);
 
 			// Options
 			// use data offset to count number of options
@@ -339,23 +339,25 @@ int main(int argc, char *argv[]) {
 	return errorcode;
 }
 
-void read16bits(int * dest, FILE * file) {
-	char byte;
-	*dest = 0;
+// read 16 bits, one byte at a time, into unsigned int
+void read16bits(unsigned int * dest, FILE * file) {
+	unsigned char byte; // for some reason, if this char is signed, everything gets messed up
+			    // I don't know why sign would have any impact on bit shifting or binary operations
+			    // But that's just how it seems to work
 
 	fread(&byte, sizeof(char), 1, file);
-	*dest = byte << 8; 	// I love bit shifting
-	fread(&byte, sizeof(char), 1, file);
-	*dest |= byte;		// we could use "+=", but that's not as cool
-}
-
-void read32bits(long int * dest, FILE * file) {
-	char byte;
-	*dest = 0;
-
+	*dest = byte << 8;
 	fread(&byte, sizeof(char), 1, file);
 	*dest |= byte;
-	*dest = *dest << 8;
+}
+
+// read 32 bits. one byte at a time, into unsigned long int
+void read32bits(unsigned long int * dest, FILE * file) {
+	unsigned char byte;
+
+	fread(&byte, sizeof(char), 1, file);
+	*dest = byte;
+	*dest = *dest << 8; // we shift the entire long int each time to make room for new byte
 	fread(&byte, sizeof(char), 1, file);
 	*dest |= byte;
 	*dest = *dest << 8;
