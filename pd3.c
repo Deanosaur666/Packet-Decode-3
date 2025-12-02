@@ -4,6 +4,9 @@
 // Terminal input for linux:
 // gcc pd2.c ; ./a.out Frame2.bin
 
+void read16bits(int *, FILE *);
+void read32bits(long int *, FILE *);
+
 // let's read a binary file
 int main(int argc, char *argv[]) {
 	int errorcode = 0;				// returned at end of function
@@ -20,6 +23,16 @@ int main(int argc, char *argv[]) {
 	unsigned char flags;			// IP header flags				(3 bits)
 	unsigned int fragmentOffset;	// IP header fragment offset	(13 bits)
 	unsigned int checksum;			// IP checksum					(16 bits)
+
+	unsigned int sourcePort;		// TCP source port				(16 bits)
+	unsigned int destPort;			// TCP destination port			(16 bits)
+	unsigned long int seqNumber;	// TCP sequence number			(32 bits) (long int is guaranteed to be at least 32 bits, unlike regular int at 16 bits)
+	unsigned long int ackNumber;	// TCP acknowledgement number	(32 bits)
+	unsigned char dataOffset;		// TCP data offset				(4 bits)
+	unsigned int advertisedWindow;	// TCP advertised window		(16 bits)
+	unsigned int tcpChecksum;		// TCP header & data checksum	(16 bits)
+	unsigned int urgentPointer;		// TCP urgent pointer			(16 bits)
+
 
 	printf("\n");
 
@@ -209,37 +222,90 @@ int main(int argc, char *argv[]) {
 
 			// Source Port
 			// 2 bytes, decimal
+			read16bits(&sourcePort, file);
+			printf("\nSource Port:\t\t\t\t%u\n", sourcePort);
 
 			// Destination Port
 			// 2 bytes, decimal
+			read16bits(&destPort, file);
+			printf("\nDestination Port:\t\t\t\t%u\n", destPort);
 
 			// Raw Sequence Sumber
 			// 4 bytes, decimal
+			read32bits(&seqNumber, file);
+			printf("\nRaw Sequence Number:\t\t\t\t%lu\n", seqNumber);
 
 			// Raw Acknowledgement Number
 			// 4 bytes, decimal
+			read32bits(&ackNumber, file);
+			printf("\nRaw Acknowledgement Number:\t\t\t\t%lu\n", ackNumber);
 
 			// Data Offset
 			// 4 bits, decimal
 			// skip 4 reserved buts
+			printf("Data Offset:\t\t\t");
+			fread(&byte, sizeof(char), 1, file);
+			dataOffset = (byte >> 4) & 0x0F;
+			printf("%d", dataOffset);
 
 			// Flags
 			// 8 bits, 1 byte
 			// left to right:
 			// CWR, ECE, URG, ACK, PSH, RST, SYN, FIN
+			printf("Flags:\t\t\t\t");
+			fread(&byte, sizeof(char), 1, file);
+			if(byte & 0x80)
+				printf("CWR ");
+			if(byte & 0x40)
+				printf("ECE ");
+			if(byte & 0x20)
+				printf("URG ");
+			if(byte & 0x10)
+				printf("ACK ");
+			if(byte & 0x08)
+				printf("PSH ");
+			if(byte & 0x04)
+				printf("RST ");
+			if(byte & 0x02)
+				printf("SYN ");
+			if(byte & 0x01)
+				printf("FIN");
+
 
 			// Window Size
 			// 2 bytes, decimal
+			read16bits(&advertisedWindow, file);
+			printf("\nWindow Size:\t\t\t\t%u\n", advertisedWindow);
 
 			// TCP Checksum
 			// 2 bytes, hex
+			read16bits(&tcpChecksum, file);
+			printf("\nTCP Checksum:\t\t\t\t%x\n", tcpChecksum);
 
 			// Urgent Pointer
 			// 2 bytes, decimal (I GUESS)
+			read16bits(&urgentPointer, file);
+			printf("\nUrgent Pointer:\t\t\t\t%u\n", urgentPointer);
 
 			// Options
 			// use data offset to count number of options
 			// should be basically same as IP options
+			if(dataOffset <= 5) {
+				printf("\nOptions:\t\t\t\tNo Options");
+			}
+			else {
+				// Option Word Count = IHL - 5
+				for(int i = 0; i < dataOffset - 5; i ++) {
+					printf("\nTCP Option Word #%d:\t\t\t0x", i);
+					// we don't need to store the whole word in an int or anything,
+					// since printing bytes is just printing 2 hex digits at a time, left to right
+					// a 32 bit word is 4 bytes, of course
+					for(int j = 0; j < 4; j ++) {
+						fread(&byte, sizeof(char), 1, file);
+						printf("%02x", byte);
+					}
+				}
+			}
 
 			// the rest is payload
 			printf("\n\nPayload:\n");
@@ -271,4 +337,31 @@ int main(int argc, char *argv[]) {
 
 	printf("\n");
 	return errorcode;
+}
+
+void read16bits(int * dest, FILE * file) {
+	char byte;
+	*dest = 0;
+
+	fread(&byte, sizeof(char), 1, file);
+	*dest = byte << 8; 	// I love bit shifting
+	fread(&byte, sizeof(char), 1, file);
+	*dest |= byte;		// we could use "+=", but that's not as cool
+}
+
+void read32bits(long int * dest, FILE * file) {
+	char byte;
+	*dest = 0;
+
+	fread(&byte, sizeof(char), 1, file);
+	*dest |= byte;
+	*dest = *dest << 8;
+	fread(&byte, sizeof(char), 1, file);
+	*dest |= byte;
+	*dest = *dest << 8;
+	fread(&byte, sizeof(char), 1, file);
+	*dest |= byte;
+	*dest = *dest << 8;
+	fread(&byte, sizeof(char), 1, file);
+	*dest |= byte;
 }
