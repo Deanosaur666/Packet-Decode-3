@@ -26,7 +26,8 @@ int main(int argc, char *argv[]) {
 
 	unsigned int sourcePort;		// TCP source port				(16 bits)
 	unsigned int destPort;			// TCP destination port			(16 bits)
-	unsigned long int seqNumber;	// TCP sequence number			(32 bits) (long int is guaranteed to be at least 32 bits, unlike regular int at 16 bits)
+	// NOTE: long int is guaranteed to be at least 32 bits, unlike regular int at 16 bits
+	unsigned long int seqNumber;	// TCP sequence number			(32 bits)
 	unsigned long int ackNumber;	// TCP acknowledgement number	(32 bits)
 	unsigned char dataOffset;		// TCP data offset				(4 bits)
 	unsigned int advertisedWindow;	// TCP advertised window		(16 bits)
