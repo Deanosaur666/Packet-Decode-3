@@ -204,6 +204,43 @@ int main(int argc, char *argv[]) {
 				}
 			}
 
+			printf("\n\nTCP header:\n");
+			printf("----------------\n");
+
+			// Source Port
+			// 2 bytes, decimal
+
+			// Destination Port
+			// 2 bytes, decimal
+
+			// Raw Sequence Sumber
+			// 4 bytes, decimal
+
+			// Raw Acknowledgement Number
+			// 4 bytes, decimal
+
+			// Data Offset
+			// 4 bits, decimal
+			// skip 4 reserved buts
+
+			// Flags
+			// 8 bits, 1 byte
+			// left to right:
+			// CWR, ECE, URG, ACK, PSH, RST, SYN, FIN
+
+			// Window Size
+			// 2 bytes, decimal
+
+			// TCP Checksum
+			// 2 bytes, hex
+
+			// Urgent Pointer
+			// 2 bytes, decimal (I GUESS)
+
+			// Options
+			// use data offset to count number of options
+			// should be basically same as IP options
+
 			// the rest is payload
 			printf("\n\nPayload:\n");
 
